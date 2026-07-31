@@ -30,6 +30,16 @@ This project is an **upgrade/extension** of an earlier, simpler simulator: [**Fu
 
 *Este proyecto es una **actualización/extensión** de un simulador anterior más simple: [**Full-Arm Kinematics & Dynamics Simulator**](https://github.com/enriquebp/Full-ARm-Kinematics-Dynamics-Simulator) — que usaba cuaterniones de IMU y un modelo de torque antropométrico simplificado seno/coseno. Todo lo de ese proyecto original sigue funcionando aquí (misma cinemática, misma base de interfaz); este repositorio agrega encima la capa completa de comparación con OpenSim/MoBL-ARMS, el torque 3D real, el análisis de fuerza a nivel muscular, y el visor 3D de huesos reales.*
 
+
+https://github.com/user-attachments/assets/4451c70d-f620-41a3-864e-0dd1809fb069
+
+
+
+https://github.com/user-attachments/assets/57fe7b88-be6c-47aa-9cbb-7f283aa2c049
+
+
+
+
 ---
 
 ## Quick start / Inicio rápido

@@ -1,0 +1,12 @@
+# OpenSim is NOT included here -- it must be installed via conda, not pip:
+#   conda install -c opensim-org opensim
+# (see README.md and Tutorial_Integracion_OpenSim_EN_ES.md, Section 2)
+
+PyQt6>=6.4
+matplotlib>=3.7
+numpy>=1.24
+scipy>=1.10
+
+# Optional: only needed for the "Realistic View" bone tab (Tutorial Section 24)
+pyvista>=0.44
+pyvistaqt>=0.11

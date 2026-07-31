@@ -1,0 +1,166 @@
+<?xml version="1.0"?>
+<!--
+  arm_shoulder_elbow.urdf
+  ========================
+  Modelo cinemático del brazo (torso -> hombro 3-DOF -> codo 1-DOF) con la
+  MISMA convención que full_arm_simulator.py:
+      - El eje local -Z de cada eslabón "hueso" apunta en dirección distal.
+      - El hombro se modela como 3 articulaciones revolute en serie
+        (abd/add, flex/ext, rotación interna/externa) con eslabones
+        intermedios de masa pequeña pero no nula (URDF/PhysX no admite
+        bien masa cero en un eslabón con inercia).
+      - El codo es una sola articulación revolute (flexo-extensión).
+
+  Limites articulares en radianes, tomados de los mismos rangos anatómicos
+  usados en los sliders "Direct Joint Angles" del simulador PyQt6:
+      shoulder_flex : -60°  a 180°
+      shoulder_abd  :   0°  a 180°
+      shoulder_rot  : -90°  a  90°
+      elbow_flex    :   0°  a 150°
+
+  Ajusta upper_arm_length / forearm_length (abajo, en metros) para que
+  coincidan con los valores de tus sliders "Upper Arm Len" / "Forearm Len".
+-->
+<robot name="shoulder_elbow_arm">
+
+  <material name="torso_mat"><color rgba="0.2 0.25 0.3 1.0"/></material>
+  <material name="upper_arm_mat"><color rgba="0.30 0.55 0.85 1.0"/></material>
+  <material name="forearm_mat"><color rgba="0.30 0.75 0.45 1.0"/></material>
+  <material name="joint_mat"><color rgba="0.85 0.85 0.85 1.0"/></material>
+  <material name="hand_mat"><color rgba="0.85 0.30 0.25 1.0"/></material>
+
+  <!-- ================= TORSO (base fija) ================= -->
+  <link name="torso">
+    <visual>
+      <origin xyz="0 0 -0.25" rpy="0 0 0"/>
+      <geometry><box size="0.28 0.18 0.55"/></geometry>
+      <material name="torso_mat"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.25" rpy="0 0 0"/>
+      <geometry><box size="0.28 0.18 0.55"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="30.0"/>
+      <origin xyz="0 0 -0.25"/>
+      <inertia ixx="1.2" ixy="0" ixz="0" iyy="1.2" iyz="0" izz="0.6"/>
+    </inertial>
+  </link>
+
+  <!-- ============ HOMBRO: 3 revolute en serie (abd -> flex -> rot) ============ -->
+  <link name="shoulder_dummy_1">
+    <visual><geometry><sphere radius="0.025"/></geometry><material name="joint_mat"/></visual>
+    <inertial><mass value="0.05"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+  </link>
+
+  <link name="shoulder_dummy_2">
+    <visual><geometry><sphere radius="0.025"/></geometry><material name="joint_mat"/></visual>
+    <inertial><mass value="0.05"/><inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/></inertial>
+  </link>
+
+  <joint name="shoulder_abd" type="revolute">
+    <!-- abduccion/aduccion: rotacion sobre eje Y local (plano frontal/coronal).
+         Signo negativo: el hombro esta montado en +X respecto al torso; con
+         este signo el brazo se ALEJA del cuerpo al aumentar el angulo
+         (abduccion realista), en vez de cruzar hacia el centro/adentro. -->
+    <parent link="torso"/>
+    <child link="shoulder_dummy_1"/>
+    <origin xyz="0.14 0 -0.02" rpy="0 0 0"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="0.0" upper="3.1416" effort="80" velocity="3.0"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <joint name="shoulder_flex" type="revolute">
+    <!-- flexo-extension: rotacion sobre eje X local (plano sagital) -->
+    <parent link="shoulder_dummy_1"/>
+    <child link="shoulder_dummy_2"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.047" upper="3.1416" effort="80" velocity="3.0"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <link name="upper_arm">
+    <visual>
+      <origin xyz="0 0 -0.15" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.035" length="0.30"/></geometry>
+      <material name="upper_arm_mat"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.15" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.035" length="0.30"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 -0.135"/>  <!-- CM al 45% de la longitud, ver ARM_CM_RATIO -->
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.002"/>
+    </inertial>
+  </link>
+
+  <joint name="shoulder_rot" type="revolute">
+    <!-- rotacion interna/externa: rotacion sobre eje Z local (a lo largo del hueso) -->
+    <parent link="shoulder_dummy_2"/>
+    <child link="upper_arm"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.5708" upper="1.5708" effort="60" velocity="3.0"/>
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+  <!-- ================= CODO: 1 revolute (flexo-extension) ================= -->
+  <link name="forearm">
+    <visual>
+      <origin xyz="0 0 -0.135" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.03" length="0.27"/></geometry>
+      <material name="forearm_mat"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.135" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.03" length="0.27"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="1.5"/>
+      <origin xyz="0 0 -0.1215"/>  <!-- CM al 45% de la longitud -->
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="elbow_flex" type="revolute">
+    <parent link="upper_arm"/>
+    <child link="forearm"/>
+    <origin xyz="0 0 -0.30" rpy="0 0 0"/>
+    <!-- CORREGIDO: eje X (medio-lateral), no Y (antero-posterior). Rotar
+         alrededor de X barre el plano Y-Z (antero-posterior/vertical),
+         que es el plano SAGITAL: flexion de codo anatomicamente correcta
+         (el antebrazo se dobla hacia adelante, no hacia el costado). -->
+    <axis xyz="1 0 0"/>
+    <limit lower="0.0" upper="2.618" effort="50" velocity="4.0"/>  <!-- 0 a 150 deg -->
+    <dynamics damping="0.3" friction="0.05"/>
+  </joint>
+
+  <!-- ================= MANO / CARGA (fija al antebrazo) ================= -->
+  <link name="hand_payload">
+    <visual>
+      <origin xyz="0 0 -0.27" rpy="0 0 0"/>
+      <geometry><sphere radius="0.04"/></geometry>
+      <material name="hand_mat"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.27" rpy="0 0 0"/>
+      <geometry><sphere radius="0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="3.0"/>  <!-- payload mass, ver s_mass en el simulador PyQt6 -->
+      <origin xyz="0 0 -0.27"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+  </link>
+
+  <joint name="hand_fixed" type="fixed">
+    <parent link="forearm"/>
+    <child link="hand_payload"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+</robot>
